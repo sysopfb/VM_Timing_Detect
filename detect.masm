@@ -1,0 +1,45 @@
+.686
+.model flat, stdcall
+option casemap:none
+include \masm32\include\windows.inc
+include \masm32\include\kernel32.inc
+includelib \masm32\lib\kernel32.lib
+ 
+ 
+.data
+init dd 0
+after_heap_call dd 0
+after_close_handle dd 0
+ 
+total_iters dd 10
+ 
+vm db "VMDetected.exe",0
+ 
+.code
+start:
+xor ebx, ebx
+loop1:
+rdtsc
+mov init, eax
+invoke GetProcessHeap
+rdtsc
+mov after_heap_call, eax
+invoke CloseHandle, 0
+rdtsc
+sub eax, after_heap_call
+mov ecx, after_heap_call
+sub ecx, init
+xor edx,edx
+div ecx
+cmp eax, 0ah
+jb not_vm
+jmp outloop
+not_vm:
+inc ebx
+cmp ebx, total_iters
+jb loop1
+invoke CreateFile, addr vm,GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL
+invoke CloseHandle, eax
+outloop:
+ret 0
+end start
